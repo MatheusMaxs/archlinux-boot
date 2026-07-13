@@ -132,12 +132,86 @@
       animation: flicker 0.15s infinite;
     }
 
+    /* ── Sidebar ── */
+    #sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      width: 200px;
+      z-index: 9997;
+      padding: 32px 16px;
+      border-right: 1px solid #1a1a1a;
+      background: rgba(10,10,10,0.85);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    #sidebar .side-header {
+      color: #444;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      padding-left: 8px;
+    }
+    .side-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      color: #555;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-left: 2px solid transparent;
+    }
+    .side-item:hover {
+      color: #999;
+      background: rgba(255,255,255,0.03);
+    }
+    .side-item.active {
+      color: #c0c0c0;
+      border-left-color: #c0c0c0;
+      background: rgba(255,255,255,0.05);
+    }
+    .side-item .side-num {
+      color: #333;
+      font-size: 9px;
+      width: 16px;
+      text-align: right;
+    }
+    .side-item.active .side-num {
+      color: #666;
+    }
+    .side-item .side-label {
+      flex: 1;
+    }
+    .side-item .side-arrow {
+      color: #4ade80;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .side-item.active .side-arrow {
+      opacity: 1;
+    }
+
+    body.light #sidebar {
+      background: rgba(232,230,227,0.9);
+      border-right-color: #ccc;
+    }
+    body.light .side-item { color: #999; }
+    body.light .side-item:hover { color: #555; background: rgba(0,0,0,0.03); }
+    body.light .side-item.active { color: #222; border-left-color: #222; background: rgba(0,0,0,0.05); }
+    body.light .side-item .side-num { color: #ccc; }
+    body.light .side-item.active .side-num { color: #888; }
+    body.light #sidebar .side-header { color: #bbb; }
+
     /* ── Main Content (Sections) ── */
     #main-content {
       display: none;
       height: 100vh;
       position: relative;
       overflow: hidden;
+      margin-left: 200px;
     }
 
     .section {
@@ -298,6 +372,10 @@
     </div>
   </div>
 
+  <div id="sidebar" style="display:none;">
+    <div class="side-header">sections</div>
+  </div>
+
   <div id="main-content"></div>
 
   <div id="nav-footer" style="display:none;">
@@ -334,6 +412,7 @@
     const bootScreen = document.getElementById('boot-screen');
     const mainContent = document.getElementById('main-content');
     const navFooter = document.getElementById('nav-footer');
+    const sidebar = document.getElementById('sidebar');
 
     let lineIndex = 0;
 
@@ -669,6 +748,24 @@ logout
         mainContent.appendChild(div);
       });
 
+      // Build sidebar
+      const sideLabels = ['welcome', 'system', 'services', 'network', 'wisdom', 'end'];
+      sections.forEach((s, i) => {
+        const item = document.createElement('div');
+        item.className = 'side-item';
+        item.dataset.index = i;
+        item.innerHTML = `
+          <span class="side-num">${String(i + 1).padStart(2, '0')}</span>
+          <span class="side-label">${sideLabels[i]}</span>
+          <span class="side-arrow">&gt;</span>
+        `;
+        item.addEventListener('click', () => {
+          if (isTransitioning || i === currentSection) return;
+          goToSection(i, i > currentSection ? 'right' : 'left');
+        });
+        sidebar.appendChild(item);
+      });
+
       // Build dots
       const dotsContainer = document.getElementById('nav-dots');
       sections.forEach((_, i) => {
@@ -681,6 +778,7 @@ logout
       updateCounter();
 
       setTimeout(() => {
+        sidebar.style.display = 'flex';
         navFooter.style.display = 'flex';
       }, 400);
 
@@ -764,6 +862,11 @@ logout
       }
 
       nextEl.classList.add('active');
+
+      // Update sidebar active
+      document.querySelectorAll('.side-item').forEach((item, i) => {
+        item.classList.toggle('active', i === index);
+      });
 
       updateCounter();
       updateDots();
