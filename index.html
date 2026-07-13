@@ -286,34 +286,12 @@
       grid-column: 1 / 3;
       padding: 12px 30px;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       font-size: 11px;
       color: #555;
       border-top: 1px solid #1a1a1a;
       background: #0c0c0c;
-    }
-
-    #nav-dots {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    .dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      border: 1px solid #444;
-      background: transparent;
-      transition: all 0.3s ease;
-    }
-    .dot.active {
-      background: #c0c0c0;
-      border-color: #c0c0c0;
-    }
-
-    #nav-counter {
-      color: #666;
-      font-size: 11px;
     }
 
     #nav-keys {
@@ -357,8 +335,6 @@
       border-top-color: #ccc;
       color: #999;
     }
-    body.light .dot { border-color: #bbb; }
-    body.light .dot.active { background: #333; border-color: #333; }
     body.light .key {
       border-color: #ccc;
       background: #f0eeeb;
@@ -371,7 +347,6 @@
     body.light .section .dim { color: #aaa; }
     body.light .section .cmd { color: #888; }
     body.light #crt-overlay { border-color: #e8e6e3; }
-    body.light #nav-counter { color: #999; }
   </style>
 </head>
 <body>
@@ -393,8 +368,6 @@
     <div id="main-content"></div>
 
     <div id="nav-footer" style="display:none;">
-      <div id="nav-counter">1 / 6</div>
-      <div id="nav-dots"></div>
       <div id="nav-keys">
         <span class="key-group">
           <span class="key">[↑/↓]</span>
@@ -783,16 +756,7 @@ logout
         sideItems.appendChild(item);
       });
 
-      // Build dots
-      const dotsContainer = document.getElementById('nav-dots');
-      sections.forEach((_, i) => {
-        const dot = document.createElement('span');
-        dot.className = 'dot' + (i === 0 ? ' active' : '');
-        dotsContainer.appendChild(dot);
-      });
-
       goToSection(0, false);
-      updateCounter();
 
       setTimeout(() => {
         sidebar.style.display = 'flex';
@@ -883,23 +847,9 @@ logout
         item.classList.toggle('active', i === index);
       });
 
-      updateCounter();
-      updateDots();
-
       setTimeout(() => {
         isTransitioning = false;
       }, 550);
-    }
-
-    function updateCounter() {
-      document.getElementById('nav-counter').textContent =
-        (currentSection + 1) + ' / ' + sections.length;
-    }
-
-    function updateDots() {
-      document.querySelectorAll('.dot').forEach((dot, i) => {
-        dot.classList.toggle('active', i === currentSection);
-      });
     }
 
     processNext();
