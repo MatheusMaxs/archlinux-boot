@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arch Linux</title>
+  <title>SDP — Servidor dos Programadores</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -13,7 +13,9 @@
       font-family: 'Dogica Pixel', 'Dogica', 'Consolas', 'Courier New', monospace;
       overflow: hidden;
       height: 100vh;
+      scrollbar-width: none;
     }
+    body::-webkit-scrollbar { display: none; }
 
     /* ── Boot Screen ── */
     #boot-screen {
@@ -60,7 +62,9 @@
     #boot-log {
       flex: 1;
       overflow: hidden;
+      scrollbar-width: none;
     }
+    #boot-log::-webkit-scrollbar { display: none; }
     .line { white-space: nowrap; overflow: hidden; }
     .line .timestamp { color: #c0c0c0; }
     .line .ok, .line .fail, .line .warn, .line .info, .line .highlight { color: #c0c0c0; }
@@ -128,7 +132,9 @@
       grid-template-columns: 200px 1fr;
       grid-template-rows: 1fr auto;
       height: 100vh;
+      scrollbar-width: none;
     }
+    #app::-webkit-scrollbar { display: none; }
     #app.power-on {
       animation: crt-on 0.6s ease-out forwards;
     }
@@ -224,7 +230,9 @@
       grid-column: 2;
       position: relative;
       overflow: hidden;
+      scrollbar-width: none;
     }
+    #main-content::-webkit-scrollbar { display: none; }
 
     .section {
       position: absolute; inset: 0;
@@ -233,12 +241,16 @@
       justify-content: center;
       align-items: center;
       text-align: center;
-      padding: 60px;
+      padding: 40px;
       opacity: 0;
       transition: opacity 0.5s ease, transform 0.5s ease;
       transform: scale(0.97);
       pointer-events: none;
+      overflow: hidden;
     }
+
+    ::-webkit-scrollbar { display: none; }
+    * { scrollbar-width: none; }
     .section.active {
       opacity: 1;
       transform: scale(1);
@@ -255,10 +267,12 @@
 
     .section .terminal {
       text-align: left;
-      font-size: 13px;
-      line-height: 1.7;
+      font-size: 11px;
+      line-height: 1.5;
       color: #c0c0c0;
       white-space: pre;
+      max-width: 700px;
+      width: 100%;
     }
 
     .section .prompt {
@@ -281,13 +295,31 @@
       color: #888;
     }
 
+    .section .highlight {
+      color: #f0f0f0;
+      font-weight: bold;
+    }
+
+    .section .accent {
+      color: #4ade80;
+    }
+
+    .section .link {
+      text-decoration: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .section .link:hover {
+      opacity: 0.7;
+    }
+
     /* ── Navigation Footer ── */
     #nav-footer {
       grid-row: 2;
       grid-column: 1 / 3;
       padding: 12px 30px;
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
       align-items: center;
       font-size: 11px;
       color: #555;
@@ -295,7 +327,13 @@
       background: #0c0c0c;
     }
 
-    #nav-keys {
+    #nav-left {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    #nav-right {
       display: flex;
       gap: 14px;
       align-items: center;
@@ -318,8 +356,11 @@
     body.light {
       background: #e8e6e3;
       color: #333;
+      scrollbar-width: none;
     }
-    body.light #app { background: #e8e6e3; }
+    body.light::-webkit-scrollbar { display: none; }
+    body.light #app { background: #e8e6e3; scrollbar-width: none; }
+    body.light #app::-webkit-scrollbar { display: none; }
     body.light #boot-screen { background: #e8e6e3; color: #333; }
     body.light #boot-screen .line .timestamp,
     body.light #boot-screen .line .ok,
@@ -347,7 +388,180 @@
     body.light .section .value { color: #222; }
     body.light .section .dim { color: #aaa; }
     body.light .section .cmd { color: #888; }
+    body.light .section .highlight { color: #111; }
+    body.light .section .accent { color: #2a7a4a; }
+    body.light .section .link:hover { opacity: 0.6; }
     body.light #crt-overlay { border-color: #e8e6e3; }
+
+    /* ── Mobile Navigation ── */
+    #mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 9998;
+      background: #0c0c0c;
+      border-top: 1px solid #1a1a1a;
+      padding: 10px 16px;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mobile-dots {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .mobile-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #333;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mobile-dot.active {
+      background: #4ade80;
+      transform: scale(1.3);
+    }
+
+    .mobile-controls {
+      display: flex;
+      gap: 16px;
+    }
+
+    .mobile-btn {
+      background: none;
+      border: 1px solid #333;
+      color: #666;
+      width: 36px;
+      height: 36px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .mobile-btn:hover {
+      border-color: #4ade80;
+      color: #4ade80;
+    }
+
+    body.light #mobile-nav {
+      background: #e8e6e3;
+      border-top-color: #ccc;
+    }
+
+    body.light .mobile-dot {
+      background: #ccc;
+    }
+
+    body.light .mobile-dot.active {
+      background: #2a7a4a;
+    }
+
+    body.light .mobile-btn {
+      border-color: #ccc;
+      color: #888;
+    }
+
+    body.light .mobile-btn:hover {
+      border-color: #2a7a4a;
+      color: #2a7a4a;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      #app {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+      }
+
+      #sidebar {
+        display: none !important;
+      }
+
+      #main-content {
+        grid-column: 1;
+      }
+
+      #nav-footer {
+        display: none !important;
+      }
+
+      #mobile-nav {
+        display: flex;
+      }
+
+      .section {
+        padding: 20px 16px;
+        padding-bottom: 80px;
+      }
+
+      .section .terminal {
+        font-size: 9px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      #boot-screen {
+        font-size: 10px;
+        padding: 10px 15px;
+      }
+
+      .line {
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      #boot-status {
+        font-size: 10px;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .section .terminal {
+        font-size: 8px;
+        line-height: 1.3;
+      }
+
+      .section {
+        padding: 16px 12px;
+        padding-bottom: 80px;
+      }
+
+      #boot-screen {
+        font-size: 8px;
+        padding: 8px 10px;
+      }
+
+      .section .highlight {
+        font-size: 10px;
+      }
+
+      .section .accent {
+        font-size: 9px;
+      }
+    }
+
+    @media (max-height: 600px) {
+      .section .terminal {
+        font-size: 8px;
+        line-height: 1.3;
+      }
+
+      .section {
+        padding: 12px 10px;
+        padding-bottom: 80px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -361,15 +575,21 @@
 
   <div id="app">
     <div id="sidebar" style="display:none;">
-      <div class="side-header">sections</div>
+      <div class="side-header">sdp://</div>
       <div class="side-items"></div>
-      <div class="side-footer">ArchLinux v6.12.7</div>
+      <div class="side-footer">21.482 devs online</div>
     </div>
 
     <div id="main-content"></div>
 
     <div id="nav-footer" style="display:none;">
-      <div id="nav-keys">
+      <div id="nav-left">
+        <span class="key-group">
+          <span class="key">⑂</span>
+          <span class="key-desc">main · sync ok</span>
+        </span>
+      </div>
+      <div id="nav-right">
         <span class="key-group">
           <span class="key">[↑/↓]</span>
           <span class="key-desc">Navigate</span>
@@ -390,6 +610,15 @@
     </div>
   </div>
 
+  <div id="mobile-nav">
+    <div class="mobile-dots"></div>
+    <div class="mobile-controls">
+      <button id="mobile-prev" class="mobile-btn">◀</button>
+      <button id="mobile-theme" class="mobile-btn">◐</button>
+      <button id="mobile-next" class="mobile-btn">▶</button>
+    </div>
+  </div>
+
   <div id="flash-overlay"></div>
   <div id="crt-overlay"></div>
 
@@ -406,66 +635,61 @@
     let lineIndex = 0;
 
     const lines = [
-      { type: 'raw', text: '                    GNU GRUB  version 2.12', style: 'highlight' },
+      { type: 'raw', text: '                    sdp:// workspace', style: 'highlight' },
       { type: 'raw', text: '' },
-      { type: 'raw', text: ' => Arch Linux', style: 'info' },
+      { type: 'raw', text: 'explorer', style: 'info' },
+      { type: 'raw', text: '▾ sdp://', style: 'info' },
+      { type: 'raw', text: '⌁', style: 'info' },
+      { type: 'raw', text: 'home.tsx', style: 'info' },
+      { type: 'raw', text: '▤', style: 'info' },
+      { type: 'raw', text: 'sobre.md', style: 'info' },
+      { type: 'raw', text: '{}', style: 'info' },
+      { type: 'raw', text: 'eventos.json', style: 'info' },
+      { type: 'raw', text: '◈', style: 'info' },
+      { type: 'raw', text: 'quests.lua', style: 'info' },
+      { type: 'raw', text: '▲', style: 'info' },
+      { type: 'raw', text: 'founders.ts', style: 'info' },
+      { type: 'raw', text: '$', style: 'info' },
+      { type: 'raw', text: 'contato.sh', style: 'info' },
       { type: 'raw', text: '' },
-      { type: 'raw', text: 'Booting Arch Linux in 3 seconds...', style: 'info' },
-      { type: 'delay', ms: 800 },
-      { type: 'raw', text: 'Booting Arch Linux in 2 seconds...', style: 'info' },
-      { type: 'delay', ms: 800 },
-      { type: 'raw', text: 'Booting Arch Linux in 1 seconds...', style: 'info' },
-      { type: 'delay', ms: 800 },
+      { type: 'raw', text: '● 2.700 online', style: 'ok' },
+      { type: 'raw', text: '⑂ main · sync ok', style: 'ok' },
       { type: 'raw', text: '' },
-      { type: 'boot', msg: 'Linux version 6.12.7-arch1-1 (root@archlinux) #1 SMP PREEMPT_DYNAMIC', ok: true, delay: 200 },
-      { type: 'boot', msg: 'x86/fpu: Supporting XSAVE feature', ok: true, delay: 100 },
-      { type: 'boot', msg: 'SMP: Allowing 8 CPUs, 8 hotplug CPUs', ok: true, delay: 200 },
-      { type: 'boot', msg: 'ACPI: Core revision 20240322', ok: true, delay: 120 },
-      { type: 'boot', msg: 'Calibrating delay loop... 7782.40 BogoMIPS', ok: true, delay: 300 },
-      { type: 'boot', msg: 'Mount-cache hash table entries: 65536', ok: true, delay: 100 },
-      { type: 'boot', msg: 'AVX2 version of gcm_enc/dec engaged', ok: true, delay: 120 },
-      { type: 'raw', text: '' },
-      { type: 'raw', text: ' :: Running early hook [udev]', style: 'info' },
-      { type: 'delay', ms: 400 },
-      { type: 'raw', text: ' :: Running hook [udev]', style: 'info' },
-      { type: 'delay', ms: 300 },
-      { type: 'raw', text: ' :: Running hook [filesystems]', style: 'info' },
-      { type: 'delay', ms: 500 },
-      { type: 'raw', text: ' :: Running hook [fsck]', style: 'info' },
       { type: 'delay', ms: 600 },
+      { type: 'raw', text: 'loading workspace...', style: 'info' },
+      { type: 'delay', ms: 400 },
+      { type: 'raw', text: 'booting sdp://environment', style: 'info' },
+      { type: 'delay', ms: 500 },
       { type: 'raw', text: '' },
-      { type: 'systemd', msg: 'Reached target User and Group Name Lookups', ok: true },
-      { type: 'systemd', msg: 'Reached target Remote File Systems', ok: true },
-      { type: 'systemd', msg: 'Reached target Swaps', ok: true },
-      { type: 'systemd', msg: 'Starting Accounts Service...', ok: true },
-      { type: 'systemd', msg: 'Starting Avahi mDNS/DNS-SD Stack...', ok: true },
-      { type: 'systemd', msg: 'Starting Bluetooth Service...', ok: true },
-      { type: 'systemd', msg: 'Starting D-Bus System Message Bus...', ok: true },
-      { type: 'systemd', msg: 'Starting Network Manager...', ok: true },
-      { type: 'systemd', msg: 'Starting GDM Display Manager...', ok: true },
-      { type: 'systemd', msg: 'Starting udev Coldplug all Devices...', ok: true },
-      { type: 'systemd', msg: 'Starting udev Kernel Device Manager...', ok: true },
-      { type: 'systemd', msg: 'Starting Modem Manager...', ok: true },
-      { type: 'systemd', msg: 'Starting Firewall Service...', ok: true },
-      { type: 'systemd', msg: 'Started Accounts Service', ok: true },
-      { type: 'systemd', msg: 'Started Avahi mDNS/DNS-SD Stack', ok: true },
-      { type: 'systemd', msg: 'Started Bluetooth Service', ok: true },
-      { type: 'systemd', msg: 'Started D-Bus System Message Bus', ok: true },
-      { type: 'systemd', msg: 'Started Network Manager', ok: true },
-      { type: 'systemd', msg: 'Started GDM Display Manager', ok: true },
-      { type: 'systemd', msg: 'Started udev Kernel Device Manager', ok: true },
-      { type: 'systemd', msg: 'Starting Network Manager Wait Online...', ok: true, extraDelay: 600 },
-      { type: 'systemd', msg: 'Starting Hostname Service...', ok: true, extraDelay: 400 },
-      { type: 'systemd', msg: 'Started Network Manager Wait Online', ok: true },
-      { type: 'systemd', msg: 'Started Hostname Service', ok: true },
+      { type: 'raw', text: 'ctrl+k para buscar · ↑↑↓↓←→←→BA', style: 'dim' },
+      { type: 'delay', ms: 800 },
       { type: 'raw', text: '' },
-      { type: 'raw', text: ' :: networking   [OK]   IPv4: 192.168.1.42', style: 'ok' },
-      { type: 'raw', text: ' :: networking   [OK]   IPv6: 2601::a1b2:3c4d', style: 'ok' },
+      { type: 'raw', text: 'import { comunidade } from \'@sdp/discord\';', style: 'info' },
+      { type: 'raw', text: '// networking, dicas, eventos e + de TI — para todos os públicos', style: 'comment' },
       { type: 'raw', text: '' },
-      { type: 'systemd', msg: 'Reached target Network is Online', ok: true },
-      { type: 'systemd', msg: 'Reached target Graphical Interface', ok: true },
+      { type: 'raw', text: 'Servidor dos programadores', style: 'highlight' },
       { type: 'raw', text: '' },
-      { type: 'raw', text: 'Arch Linux 6.12.7-arch1-1 (tty1)', style: 'info' },
+      { type: 'raw', text: '$ join --server sdp ', style: 'ok' },
+      { type: 'raw', text: '▶ entrar no servidor', style: 'accent' },
+      { type: 'raw', text: '' },
+      { type: 'raw', text: './eventos --proximos', style: 'info' },
+      { type: 'raw', text: '' },
+      { type: 'raw', text: 'parceiros', style: 'dim' },
+      { type: 'raw', text: '  ◆ websecbr.org', style: 'info' },
+      { type: 'raw', text: '  ◆ aceleradev.com.br', style: 'info' },
+      { type: 'raw', text: '  ◆ hostinger.com', style: 'info' },
+      { type: 'raw', text: '  ◆ seja você também', style: 'comment' },
+      { type: 'raw', text: '' },
+      { type: 'raw', text: 'sobre.md — a história da comunidade', style: 'highlight' },
+      { type: 'raw', text: '' },
+      { type: 'raw', text: 'Criada por devs, para devs', style: 'accent' },
+      { type: 'raw', text: 'Desde 2023, reunimos programadores de todos os níveis', style: 'info' },
+      { type: 'raw', text: 'para aprender, colaborar e fazer networking de verdade.', style: 'info' },
+      { type: 'raw', text: '' },
+      { type: 'raw', text: '  21.482+ membros', style: 'highlight' },
+      { type: 'raw', text: '  08+ eventos / mês', style: 'highlight' },
+      { type: 'raw', text: '  24/7 canais ativos', style: 'highlight' },
+      { type: 'raw', text: '  100% gratuito, sempre', style: 'highlight' },
       { type: 'raw', text: '' },
       { type: 'raw', text: 'archlinux login: ', blink: true },
     ];
@@ -596,131 +820,169 @@
     // ── Sections System ──
     const sections = [
       {
-        id: 'welcome',
+        id: 'home',
         html: `
           <div class="terminal">
-<span class="comment">#</span>
-<span class="comment"># Arch Linux 6.12.7-arch1-1</span>
-<span class="comment"># Kernel live: 0h 2m 34s</span>
-<span class="comment">#</span>
+<span class="comment">// networking, dicas, eventos e + de TI — para todos os públicos</span>
 
-<span class="prompt">archlinux login:</span> root
-<span class="prompt">Password:</span> ************
+<span class="highlight">Servidor dos</span>
+<span class="highlight">programadores</span>
 
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">neofetch</span>
-                    .-.
-                  .-::::-.
-                .:::::::::-.          <span class="value">root@archlinux</span>
-              .:-----------+:.        <span class="dim">OS:</span><span class="value"> Arch Linux x86_64</span>
-             .-----------+++-.        <span class="dim">Kernel:</span><span class="value"> 6.12.7-arch1-1</span>
-            .-----------+++++-.       <span class="dim">Uptime:</span><span class="value"> 2 minutes</span>
-           .:---------.://+++-.       <span class="dim">Packages:</span><span class="value"> 847 (pacman)</span>
-          .:-----------.://+++-.      <span class="dim">Shell:</span><span class="value"> bash 5.2.37</span>
-         :-------------:://++++.      <span class="dim">Resolution:</span><span class="value"> 1920x1080</span>
-        :--------------::://+++-.     
-       :---------------::://++++-.    <span class="comment"># use arrows or 1-6</span>
-      :-----------------::://++++:-.  <span class="comment"># to navigate sections</span>
-     :------------------::://+++++--. 
-   .:-------------------::://++++++--:
-  .:--------------------::://+++++++--:
- :----------------------::://++++++++--:
+<span class="cmd">$</span> <span class="value">join --server sdp</span>
+<a href="https://discord.gg/programador" target="_blank" class="link accent">▶ entrar no servidor</a>
+
+<span class="cmd">$</span> <span class="value" onclick="goToSection(2, 'right')" style="cursor:pointer">./eventos --proximos</span>
+
+<span class="dim">parceiros</span>
+  <a href="https://websecbr.org" target="_blank" class="link accent">◆ websecbr.org</a>
+  <a href="https://aceleradev.com.br" target="_blank" class="link accent">◆ aceleradev.com.br</a>
+  <a href="https://hostinger.com" target="_blank" class="link accent">◆ hostinger.com</a>
+  <span class="comment">◆ seja você também</span>
   </div>
         `
       },
       {
-        id: 'system',
+        id: 'sobre',
         html: `
           <div class="terminal">
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">cat /proc/cpuinfo | grep -E "model name|cpu cores"</span>
-<span class="prompt">model name</span>  : AMD Ryzen 7 7800X3D (8) @ 3.8GHz
-<span class="prompt">cpu cores</span>   : 8
+<span class="highlight"># sobre.md — a história da comunidade</span>
 
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">free -h</span>
-               <span class="dim">total</span>        <span class="dim">used</span>        <span class="dim">free</span>      <span class="dim">shared</span>     <span class="dim">buff/cache</span>
-<span class="prompt">Mem:</span>          15.6Gi       2.3Gi       8.1Gi       0.1Gi       5.2Gi
-<span class="prompt">Swap:</span>          8.0Gi          0       8.0Gi
+<span class="accent">Criada por devs,</span>
+<span class="accent">para devs</span>
 
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">df -h /</span>
-<span class="dim">Filesystem</span>      <span class="dim">Size</span>  <span class="dim">Used</span> <span class="dim">Avail</span>  <span class="dim">Use%</span>
-/dev/nvme0n1p2   916G  124G   746G   14%
+<span class="info">Desde 2023, reunimos programadores de todos os níveis</span>
+<span class="info">para aprender, colaborar e fazer networking de verdade.</span>
+<span class="info">Discutimos back-end, front-end, cloud, IA e cibersegurança</span>
+<span class="info">— com mesas-redondas, sessões exclusivas e eventos que</span>
+<span class="info">geram colaborações, projetos e oportunidades.</span>
 
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">lspci | grep -E "VGA|3D"</span>
-<span class="prompt">2d:00.0</span> VGA compatible controller: NVIDIA GA104 [GeForce RTX 3070]
+  <span class="highlight">21.482+</span>  <span class="dim">membros</span>
+  <span class="highlight">08+</span>      <span class="dim">eventos / mês</span>
+  <span class="highlight">24/7</span>     <span class="dim">canais ativos</span>
+  <span class="highlight">100%</span>     <span class="dim">gratuito, sempre</span>
   </div>
         `
       },
       {
-        id: 'services',
+        id: 'eventos',
         html: `
           <div class="terminal">
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">systemctl list-units --type=service --state=running</span>
-  UNIT                     LOAD   ACTIVE SUB     DESCRIPTION
-<span class="prompt">  NetworkManager.service</span>  loaded active running Network Manager
-<span class="prompt">  bluetooth.service</span>       loaded active running Bluetooth Service
-<span class="prompt">  cups.service</span>            loaded active running CUPS Scheduler
-<span class="prompt">  firewalld.service</span>       loaded active running Firewall Service
-<span class="prompt">  gdm.service</span>             loaded active running GDM Display Manager
-<span class="prompt">  sshd.service</span>            loaded active running OpenSSH Daemon
+<span class="highlight">"agenda": [ julho 2026</span>
 
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">systemctl is-active docker</span>
-<span class="comment">inactive</span>
+<span class="accent">Próximos eventos</span>
+<span class="comment">ver todos os meetups →</span>
 
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">uptime -s</span>
-<span class="value">2026-07-12 14:23:07</span>
+<span class="info">17</span> <span class="dim">jul · 19:00—21:00</span>
+<span class="comment">{ "talk": "figma & ui/ux" }</span>
+<span class="highlight">Figma & UI/UX na prática</span>
+<span class="info">Nossos devs vão aprender a usar o Figma, entender a</span>
+<span class="info">diferença entre UI e UX e como aplicar tudo isso em</span>
+<span class="info">seus próprios projetos.</span>
+<span class="dim">speakers: convidados da comunidade</span>
+<a href="https://discord.gg/programador" target="_blank" class="link accent">ver mais +</a>
+
+<span class="info">18</span> <span class="dim">jul · 20:00—22:00</span>
+<span class="comment">{ "talk": "ai agents & skills" }</span>
+<span class="highlight">AI Agents & uso de skills em agents</span>
+<span class="info">O que são AI agents, quais existem e como usá-los da</span>
+<span class="info">melhor forma nos seus projetos — incluindo skills para</span>
+<span class="info">agents mais personalizados e com melhores outputs.</span>
+<span class="dim">speakers: Matheus Audibert</span>
+<a href="https://discord.gg/programador" target="_blank" class="link accent">ver mais +</a>
+
+<span class="info">19</span> <span class="dim">jul · 18:00—20:00</span>
+<span class="comment">{ "talk": "futuro da ai" }</span>
+<span class="highlight">Futuro da IA & Networking</span>
+<span class="info">Como pode ser o futuro da IA no mercado dev e como</span>
+<span class="info">isso afeta todos nós. Em seguida, uma conversa sobre</span>
+<span class="info">a importância do networking para a carreira.</span>
+<span class="dim">speakers: Caio Andres & Bernardo Righi</span>
+<a href="https://discord.gg/programador" target="_blank" class="link accent">ver mais +</a>
   </div>
         `
       },
       {
-        id: 'network',
+        id: 'quests',
         html: `
           <div class="terminal">
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">ip addr show eth0</span>
-<span class="prompt">2: eth0</span> <span class="dim">state UP</span>
-    inet <span class="value">192.168.1.42/24</span> brd 192.168.1.255
-    inet6 <span class="value">2601::a1b2:3c4d</span>/64 scope global
+<span class="highlight">local quests = { -- porque participar?</span>
 
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">ping -c 2 1.1.1.1</span>
-PING 1.1.1.1 (1.1.1.1) 56(84) bytes of data.
-64 bytes from 1.1.1.1: icmp_seq=1 ttl=53 <span class="prompt">time=1.2 ms</span>
-64 bytes from 1.1.1.1: icmp_seq=2 ttl=53 <span class="prompt">time=0.9 ms</span>
+<span class="accent">Quest log</span>
 
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">speedtest-cli --simple</span>
-Ping: <span class="value">1.2 ms</span>
-Download: <span class="value">847.42 Mbit/s</span>
-Upload: <span class="value">418.73 Mbit/s</span>
+<span class="info">◈ quest 01 · ativa</span>     <span class="dim">+85 xp</span>
+<span class="highlight">Oportunidade & networking</span>
+<span class="info">Oportunidades de networking a toda hora — para seus</span>
+<span class="info">projetos ou até para arranjar um emprego.</span>
+
+<span class="info">◈ quest 02 · ativa</span>     <span class="dim">+70 xp</span>
+<span class="highlight">Empregos & freelances</span>
+<span class="info">Procurando vaga ou freelance? Vá ao canal de vagas do</span>
+<span class="info">servidor e ache uma que se encaixe com você.</span>
+
+<span class="info">◈ quest 03 · semanal</span>   <span class="dim">+90 xp</span>
+<span class="highlight">Eventos do servidor</span>
+<span class="info">Ensinamos LinkedIn, GitHub, design UI/UX, preparo para</span>
+<span class="info">entrevistas em inglês e muito mais.</span>
+
+<span class="info">◈ quest 04 · passiva</span>   <span class="dim">+100 xp</span>
+<span class="highlight">Conhecimento & aprendizado</span>
+<span class="info">Conversar com outros programadores te faz adquirir mais</span>
+<span class="info">conhecimento e estar em constante evolução.</span>
   </div>
         `
       },
       {
-        id: 'quote',
+        id: 'founders',
         html: `
           <div class="terminal">
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">fortune</span>
-<span class="comment">#</span>
-<span class="comment">#  "Simplicity is the</span>
-<span class="comment">#   ultimate sophistication."</span>
-<span class="comment">#</span>
-<span class="comment">#          — Leonardo da Vinci</span>
-<span class="comment">#</span>
+<span class="highlight">export const founders: Player[] = [</span>
 
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">_</span>
+<span class="comment">  // Party members</span>
+
+<span class="accent">  BR</span>  <span class="dim">LVL 42 · BACK</span>
+<span class="highlight">  Bernardo Righi</span>
+<span class="info">  Backend Developer · Python, Java, automação e</span>
+<span class="info">  sistemas inteligentes · CS @Unisinos</span>
+<span class="dim">  site · </span><a href="https://github.com/righibe" target="_blank" class="link accent">github</a><span class="dim"> · </span><a href="https://www.linkedin.com/in/bernardo-righi/" target="_blank" class="link accent">linkedin</a>
+
+<span class="accent">  MA</span>  <span class="dim">LVL 40 · CLOUD</span>
+<span class="highlight">  Matheus Audibert</span>
+<span class="info">  Software Engineer @Itaú · Python & AWS ·</span>
+<span class="info">  sistemas cloud-native e criador de conteúdo</span>
+<span class="dim">  site · </span><a href="https://github.com/matheusaudibert" target="_blank" class="link accent">github</a><span class="dim"> · </span><a href="https://www.linkedin.com/in/matheusaudibert/" target="_blank" class="link accent">linkedin</a>
+
+<span class="accent">  CA</span>  <span class="dim">LVL 41 · IA</span>
+<span class="highlight">  Caio Andres</span>
+<span class="info">  Software Engineer @Itaú · Python, AWS & GenAI ·</span>
+<span class="info">  fundador da comunidade</span>
+<span class="dim">  site · </span><a href="https://github.com/caio-andres/" target="_blank" class="link accent">github</a><span class="dim"> · </span><a href="https://www.linkedin.com/in/caio-andres/" target="_blank" class="link accent">linkedin</a><span class="dim"> · </span><a href="https://www.instagram.com/caio_andress/" target="_blank" class="link accent">instagram</a>
   </div>
         `
       },
       {
-        id: 'end',
+        id: 'contato',
         html: `
           <div class="terminal">
-<span class="cmd">[root@archlinux ~]$</span> <span class="value">exit</span>
-logout
+<span class="cmd">$</span> <span class="value">./convite.sh --ano 2k26</span>
 
-<span class="comment"># Connection to archlinux closed.</span>
-<span class="comment">#</span>
-<span class="comment">#  END OF TRANSMISSION</span>
-<span class="comment">#</span>
-<span class="comment">#  [R] — back to start</span>
-<span class="comment">#  [M] — toggle theme</span>
-<span class="comment">#</span>
+<span class="highlight">Junte-se a 21.482 devs</span>
+
+<span class="info">Tirou todas as suas dúvidas? Sim ou não — entre e</span>
+<span class="info">faça parte dessa experiência que todos nós amamos.</span>
+
+<a href="https://discord.gg/programador" target="_blank" class="link accent">[ discord.gg/programador — press start ]</a>
+
+<span class="highlight"># contatos & sugestões</span>
+
+<span class="info">Estamos aqui para conectar & ajudar</span>
+<span class="info">Dúvidas, parcerias, detalhes de evento ou melhorias</span>
+<span class="info">para o servidor — nosso time responde.</span>
+
+<span class="dim">email</span>      <a href="mailto:contact.audibert@gmail.com" class="link accent">contact.audibert@gmail.com</a>
+<span class="dim">discord</span>    <a href="https://discord.gg/programador" target="_blank" class="link accent">discord.gg/programador</a>
+<span class="dim">linkedin</span>   <a href="https://linkedin.com/servidor-dos-programadores" target="_blank" class="link accent">/servidor-dos-programadores</a>
+
+<span class="comment">© 2026 servidor dos programadores. todos os direitos reservados.</span>
   </div>
         `
       }
@@ -739,14 +1001,15 @@ logout
       });
 
       // Build sidebar
-      const sideLabels = ['welcome', 'system', 'services', 'network', 'wisdom', 'end'];
+      const sideLabels = ['home.tsx', 'sobre.md', 'eventos.json', 'quests.lua', 'founders.ts', 'contato.sh'];
+      const sideIcons = ['⌁', '▤', '{}', '◈', '▲', '$'];
       const sideItems = sidebar.querySelector('.side-items');
       sections.forEach((s, i) => {
         const item = document.createElement('div');
         item.className = 'side-item';
         item.dataset.index = i;
         item.innerHTML = `
-          <span class="side-num">${String(i + 1).padStart(2, '0')}</span>
+          <span class="side-num">${sideIcons[i]}</span>
           <span class="side-label">${sideLabels[i]}</span>
           <span class="side-arrow">&gt;</span>
         `;
@@ -756,6 +1019,60 @@ logout
         });
         sideItems.appendChild(item);
       });
+
+      // Build mobile dots
+      const mobileDots = document.querySelector('.mobile-dots');
+      sections.forEach((s, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'mobile-dot';
+        dot.dataset.index = i;
+        dot.addEventListener('click', () => {
+          if (isTransitioning || i === currentSection) return;
+          goToSection(i, i > currentSection ? 'right' : 'left');
+        });
+        mobileDots.appendChild(dot);
+      });
+
+      // Mobile controls
+      document.getElementById('mobile-prev').addEventListener('click', () => {
+        if (isTransitioning || currentSection > 0) {
+          goToSection(currentSection - 1, 'left');
+        }
+      });
+
+      document.getElementById('mobile-next').addEventListener('click', () => {
+        if (isTransitioning || currentSection < sections.length - 1) {
+          goToSection(currentSection + 1, 'right');
+        }
+      });
+
+      document.getElementById('mobile-theme').addEventListener('click', () => {
+        document.body.classList.toggle('light');
+      });
+
+      // Touch swipe support
+      let touchStartX = 0;
+      let touchStartY = 0;
+      mainContent.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      mainContent.addEventListener('touchend', (e) => {
+        if (isTransitioning) return;
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const diffX = touchStartX - touchEndX;
+        const diffY = touchStartY - touchEndY;
+
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+          if (diffX > 0 && currentSection < sections.length - 1) {
+            goToSection(currentSection + 1, 'right');
+          } else if (diffX < 0 && currentSection > 0) {
+            goToSection(currentSection - 1, 'left');
+          }
+        }
+      }, { passive: true });
 
       goToSection(0, false);
 
@@ -846,6 +1163,11 @@ logout
       // Update sidebar active
       document.querySelectorAll('.side-item').forEach((item, i) => {
         item.classList.toggle('active', i === index);
+      });
+
+      // Update mobile dots
+      document.querySelectorAll('.mobile-dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
       });
 
       setTimeout(() => {
