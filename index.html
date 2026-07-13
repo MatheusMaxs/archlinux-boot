@@ -50,16 +50,6 @@
       opacity: 1;
     }
 
-    #main-content {
-      display: none;
-      height: 100vh;
-      position: relative;
-      overflow: hidden;
-      transform-origin: center center;
-    }
-    #main-content.power-on {
-      animation: crt-on 0.6s ease-out forwards;
-    }
     @keyframes crt-on {
       0%   { transform: scaleY(0.005); opacity: 0; filter: brightness(0); }
       20%  { transform: scaleY(0.01); opacity: 0; filter: brightness(3); }
@@ -128,36 +118,51 @@
       70%  { opacity: 0.98; }
       100% { opacity: 1; }
     }
-    #boot-screen, #main-content {
+    #boot-screen, #app {
       animation: flicker 0.15s infinite;
+    }
+
+    /* ── App Layout ── */
+    #app {
+      display: none;
+      grid-template-columns: 200px 1fr;
+      grid-template-rows: 1fr auto;
+      height: 100vh;
+    }
+    #app.power-on {
+      animation: crt-on 0.6s ease-out forwards;
     }
 
     /* ── Sidebar ── */
     #sidebar {
-      position: fixed;
-      left: 0; top: 0; bottom: 0;
-      width: 200px;
+      grid-row: 1 / 3;
+      grid-column: 1;
       z-index: 9997;
-      padding: 32px 16px;
+      padding: 24px 0;
       border-right: 1px solid #1a1a1a;
-      background: rgba(10,10,10,0.85);
+      background: #0c0c0c;
       display: flex;
       flex-direction: column;
-      gap: 2px;
     }
     #sidebar .side-header {
       color: #444;
       font-size: 9px;
       text-transform: uppercase;
       letter-spacing: 2px;
-      margin-bottom: 16px;
-      padding-left: 8px;
+      margin-bottom: 12px;
+      padding: 0 16px;
+    }
+    .side-items {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
     .side-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 8px;
+      padding: 7px 16px;
       color: #555;
       font-size: 11px;
       cursor: pointer;
@@ -193,9 +198,15 @@
     .side-item.active .side-arrow {
       opacity: 1;
     }
+    .side-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #1a1a1a;
+      color: #333;
+      font-size: 9px;
+    }
 
     body.light #sidebar {
-      background: rgba(232,230,227,0.9);
+      background: #e8e6e3;
       border-right-color: #ccc;
     }
     body.light .side-item { color: #999; }
@@ -204,14 +215,14 @@
     body.light .side-item .side-num { color: #ccc; }
     body.light .side-item.active .side-num { color: #888; }
     body.light #sidebar .side-header { color: #bbb; }
+    body.light .side-footer { color: #bbb; border-top-color: #ccc; }
 
     /* ── Main Content (Sections) ── */
     #main-content {
-      display: none;
-      height: 100vh;
+      grid-row: 1;
+      grid-column: 2;
       position: relative;
       overflow: hidden;
-      margin-left: 200px;
     }
 
     .section {
@@ -271,17 +282,16 @@
 
     /* ── Navigation Footer ── */
     #nav-footer {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 9998;
-      padding: 16px 30px;
+      grid-row: 2;
+      grid-column: 1 / 3;
+      padding: 12px 30px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 11px;
       color: #555;
       border-top: 1px solid #1a1a1a;
-      background: rgba(10,10,10,0.8);
+      background: #0c0c0c;
     }
 
     #nav-dots {
@@ -330,6 +340,7 @@
       background: #e8e6e3;
       color: #333;
     }
+    body.light #app { background: #e8e6e3; }
     body.light #boot-screen { background: #e8e6e3; color: #333; }
     body.light #boot-screen .line .timestamp,
     body.light #boot-screen .line .ok,
@@ -342,7 +353,7 @@
     body.light #boot-status .value { color: #333; }
     body.light .cursor { background: #333; }
     body.light #nav-footer {
-      background: rgba(232,230,227,0.9);
+      background: #e8e6e3;
       border-top-color: #ccc;
       color: #999;
     }
@@ -372,32 +383,36 @@
     </div>
   </div>
 
-  <div id="sidebar" style="display:none;">
-    <div class="side-header">sections</div>
-  </div>
+  <div id="app">
+    <div id="sidebar" style="display:none;">
+      <div class="side-header">sections</div>
+      <div class="side-items"></div>
+      <div class="side-footer">ArchLinux v6.12.7</div>
+    </div>
 
-  <div id="main-content"></div>
+    <div id="main-content"></div>
 
-  <div id="nav-footer" style="display:none;">
-    <div id="nav-counter">1 / 6</div>
-    <div id="nav-dots"></div>
-    <div id="nav-keys">
-      <span class="key-group">
-        <span class="key">[↑/↓]</span>
-        <span class="key-desc">Navigate</span>
-      </span>
-      <span class="key-group">
-        <span class="key">[1-6]</span>
-        <span class="key-desc">Section</span>
-      </span>
-      <span class="key-group">
-        <span class="key">[M]</span>
-        <span class="key-desc">Theme</span>
-      </span>
-      <span class="key-group">
-        <span class="key">[R]</span>
-        <span class="key-desc">Reset</span>
-      </span>
+    <div id="nav-footer" style="display:none;">
+      <div id="nav-counter">1 / 6</div>
+      <div id="nav-dots"></div>
+      <div id="nav-keys">
+        <span class="key-group">
+          <span class="key">[↑/↓]</span>
+          <span class="key-desc">Navigate</span>
+        </span>
+        <span class="key-group">
+          <span class="key">[1-6]</span>
+          <span class="key-desc">Section</span>
+        </span>
+        <span class="key-group">
+          <span class="key">[M]</span>
+          <span class="key-desc">Theme</span>
+        </span>
+        <span class="key-group">
+          <span class="key">[R]</span>
+          <span class="key-desc">Reset</span>
+        </span>
+      </div>
     </div>
   </div>
 
@@ -557,6 +572,8 @@
       bootDone = true;
       bootState.textContent = 'ready';
 
+      const app = document.getElementById('app');
+
       setTimeout(() => {
         flash();
 
@@ -566,16 +583,15 @@
           bootScreen.style.display = 'none';
           bootScreen.classList.remove('shutdown');
 
-          mainContent.style.display = 'block';
-          mainContent.style.opacity = '0';
+          app.style.display = 'grid';
 
           setTimeout(() => flash(), 40);
 
           setTimeout(() => {
             initSections();
-            mainContent.classList.add('power-on');
+            app.classList.add('power-on');
             setTimeout(() => {
-              mainContent.classList.remove('power-on');
+              app.classList.remove('power-on');
             }, 650);
           }, 100);
         }, 700);
@@ -750,6 +766,7 @@ logout
 
       // Build sidebar
       const sideLabels = ['welcome', 'system', 'services', 'network', 'wisdom', 'end'];
+      const sideItems = sidebar.querySelector('.side-items');
       sections.forEach((s, i) => {
         const item = document.createElement('div');
         item.className = 'side-item';
@@ -763,7 +780,7 @@ logout
           if (isTransitioning || i === currentSection) return;
           goToSection(i, i > currentSection ? 'right' : 'left');
         });
-        sidebar.appendChild(item);
+        sideItems.appendChild(item);
       });
 
       // Build dots
