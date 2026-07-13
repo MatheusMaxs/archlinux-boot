@@ -793,7 +793,6 @@ logout
 
       switch (key) {
         case 'ArrowDown':
-        case 'ArrowRight':
           e.preventDefault();
           if (isTransitioning) return;
           if (currentSection < sections.length - 1) {
@@ -801,7 +800,6 @@ logout
           }
           break;
         case 'ArrowUp':
-        case 'ArrowLeft':
           e.preventDefault();
           if (isTransitioning) return;
           if (currentSection > 0) {
