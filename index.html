@@ -450,12 +450,7 @@
     let svcCounter = 0;
     let bootDone = false;
 
-    function goFullscreen() {
-      const el = document.documentElement;
-      if (el.requestFullscreen) el.requestFullscreen();
-    }
-    document.addEventListener('click', goFullscreen, { once: true });
-    document.addEventListener('keydown', goFullscreen, { once: true });
+
 
     function appendLine(type, data) {
       let el;
