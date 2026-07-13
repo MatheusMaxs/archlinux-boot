@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arch Linux</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #c0c0c0;
+      font-family: 'Dogica Pixel', 'Dogica', 'Consolas', 'Courier New', monospace;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* ── Boot Screen ── */
+    #boot-screen {
+      position: fixed; inset: 0;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 20px 30px;
+      overflow: hidden;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+    }
+    #boot-screen.shutdown {
+      animation: crt-off 0.6s ease-in forwards;
+      pointer-events: none;
+    }
+    @keyframes crt-off {
+      0%   { transform: scaleY(1); opacity: 1; filter: brightness(1); }
+      15%  { transform: scaleY(1.01); filter: brightness(1.5); }
+      30%  { transform: scaleY(0.005); filter: brightness(3); }
+      60%  { transform: scaleY(0.001); opacity: 1; filter: brightness(5); }
+      100% { transform: scaleY(0); opacity: 0; filter: brightness(0); }
+    }
+
+    #flash-overlay {
+      position: fixed; inset: 0;
+      z-index: 10001;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.05s;
+    }
+    #flash-overlay.active {
+      opacity: 1;
+    }
+
+    #main-content {
+      display: none;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      transform-origin: center center;
+    }
+    #main-content.power-on {
+      animation: crt-on 0.6s ease-out forwards;
+    }
+    @keyframes crt-on {
+      0%   { transform: scaleY(0.005); opacity: 0; filter: brightness(0); }
+      20%  { transform: scaleY(0.01); opacity: 0; filter: brightness(3); }
+      50%  { transform: scaleY(1.02); opacity: 1; filter: brightness(1.8); }
+      75%  { transform: scaleY(0.98); filter: brightness(1.1); }
+      100% { transform: scaleY(1); opacity: 1; filter: brightness(1); }
+    }
+    #boot-log {
+      flex: 1;
+      overflow: hidden;
+    }
+    .line { white-space: nowrap; overflow: hidden; }
+    .line .timestamp { color: #c0c0c0; }
+    .line .ok, .line .fail, .line .warn, .line .info, .line .highlight { color: #c0c0c0; }
+    .cursor {
+      display: inline-block;
+      width: 8px; height: 16px;
+      background: #c0c0c0;
+      animation: blink 0.8s step-end infinite;
+      vertical-align: text-bottom;
+      margin-left: 4px;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+    #boot-status {
+      border-top: 1px solid #333;
+      padding-top: 10px; margin-top: 10px;
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+    }
+    #boot-status .label { color: #666; }
+    #boot-status .value { color: #c0c0c0; }
+    #boot-status .value.ok { color: #c0c0c0; }
+
+    /* ── CRT Overlay ── */
+    #crt-overlay {
+      pointer-events: none;
+      position: fixed; inset: 0;
+      z-index: 10000;
+      border: 18px solid #0a0a0a;
+      box-shadow:
+        inset 0 0 60px rgba(0,0,0,0.8),
+        inset 0 0 120px rgba(0,0,0,0.4);
+    }
+    #crt-overlay::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent, transparent 2px,
+        rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px
+      );
+      animation: scanline-move 8s linear infinite;
+    }
+    #crt-overlay::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
+    }
+    @keyframes scanline-move {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(4px); }
+    }
+    @keyframes flicker {
+      0%   { opacity: 1; }
+      50%  { opacity: 0.97; }
+      70%  { opacity: 0.98; }
+      100% { opacity: 1; }
+    }
+    #boot-screen, #main-content {
+      animation: flicker 0.15s infinite;
+    }
+
+    /* ── Main Content (Sections) ── */
+    #main-content {
+      display: none;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section {
+      position: absolute; inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 60px;
+      opacity: 0;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      transform: scale(0.97);
+      pointer-events: none;
+    }
+    .section.active {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+    .section.exit-left {
+      opacity: 0;
+      transform: translateX(-40px) scale(0.97);
+    }
+    .section.exit-right {
+      opacity: 0;
+      transform: translateX(40px) scale(0.97);
+    }
+
+    .section .terminal {
+      text-align: left;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #c0c0c0;
+      white-space: pre;
+    }
+
+    .section .prompt {
+      color: #4ade80;
+    }
+
+    .section .comment {
+      color: #666;
+    }
+
+    .section .value {
+      color: #e0e0e0;
+    }
+
+    .section .dim {
+      color: #777;
+    }
+
+    .section .cmd {
+      color: #888;
+    }
+
+    /* ── Navigation Footer ── */
+    #nav-footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 9998;
+      padding: 16px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #555;
+      border-top: 1px solid #1a1a1a;
+      background: rgba(10,10,10,0.8);
+    }
+
+    #nav-dots {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      border: 1px solid #444;
+      background: transparent;
+      transition: all 0.3s ease;
+    }
+    .dot.active {
+      background: #c0c0c0;
+      border-color: #c0c0c0;
+    }
+
+    #nav-counter {
+      color: #666;
+      font-size: 11px;
+    }
+
+    #nav-keys {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .key-group {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 20px;
+      padding: 0 5px;
+      border: 1px solid #333;
+      background: #111;
+      color: #888;
+      font-size: 9px;
+      font-family: inherit;
+    }
+    .key-desc {
+      color: #555;
+      font-size: 9px;
+      margin-right: 4px;
+    }
+
+    /* ── Light Mode ── */
+    body.light {
+      background: #e8e6e3;
+      color: #333;
+    }
+    body.light #boot-screen { background: #e8e6e3; color: #333; }
+    body.light #boot-screen .line .timestamp,
+    body.light #boot-screen .line .ok,
+    body.light #boot-screen .line .fail,
+    body.light #boot-screen .line .warn,
+    body.light #boot-screen .line .info,
+    body.light #boot-screen .line .highlight { color: #333; }
+    body.light #boot-status { border-top-color: #ccc; }
+    body.light #boot-status .label { color: #999; }
+    body.light #boot-status .value { color: #333; }
+    body.light .cursor { background: #333; }
+    body.light #nav-footer {
+      background: rgba(232,230,227,0.9);
+      border-top-color: #ccc;
+      color: #999;
+    }
+    body.light .dot { border-color: #bbb; }
+    body.light .dot.active { background: #333; border-color: #333; }
+    body.light .key {
+      border-color: #ccc;
+      background: #f0eeeb;
+      color: #666;
+    }
+    body.light .section .terminal { color: #444; }
+    body.light .section .prompt { color: #2a7a4a; }
+    body.light .section .comment { color: #999; }
+    body.light .section .value { color: #222; }
+    body.light .section .dim { color: #aaa; }
+    body.light .section .cmd { color: #888; }
+    body.light #crt-overlay { border-color: #e8e6e3; }
+    body.light #nav-counter { color: #999; }
+  </style>
+</head>
+<body>
+  <div id="boot-screen">
+    <div id="boot-log"></div>
+    <div id="boot-status">
+      <div><span class="label">services:</span> <span class="value" id="svc-count">0</span></div>
+      <div><span class="label">status:</span> <span class="value" id="boot-state">starting...</span></div>
+    </div>
+  </div>
+
+  <div id="main-content"></div>
+
+  <div id="nav-footer" style="display:none;">
+    <div id="nav-counter">1 / 6</div>
+    <div id="nav-dots"></div>
+    <div id="nav-keys">
+      <span class="key-group">
+        <span class="key">↑</span><span class="key">↓</span>
+        <span class="key-desc">navigate</span>
+      </span>
+      <span class="key-group">
+        <span class="key">1</span><span class="key">-</span><span class="key">6</span>
+        <span class="key-desc">section</span>
+      </span>
+      <span class="key-group">
+        <span class="key">M</span>
+        <span class="key-desc">theme</span>
+      </span>
+      <span class="key-group">
+        <span class="key">R</span>
+        <span class="key-desc">reset</span>
+      </span>
+    </div>
+  </div>
+
+  <div id="flash-overlay"></div>
+  <div id="crt-overlay"></div>
+
+  <script>
+    // ── Boot sequence ──
+    const log = document.getElementById('boot-log');
+    const svcCount = document.getElementById('svc-count');
+    const bootState = document.getElementById('boot-state');
+    const bootScreen = document.getElementById('boot-screen');
+    const mainContent = document.getElementById('main-content');
+    const navFooter = document.getElementById('nav-footer');
+
+    let lineIndex = 0;
+
+    const lines = [
+      { type: 'raw', text: '                    GNU GRUB  version 2.12', style: 'highlight' },
+      { type: 'raw', text: '' },
+      { type: 'raw', text: ' => Arch Linux', style: 'info' },
+      { type: 'raw', text: '' },
+      { type: 'raw', text: 'Booting Arch Linux in 3 seconds...', style: 'info' },
+      { type: 'delay', ms: 800 },
+      { type: 'raw', text: 'Booting Arch Linux in 2 seconds...', style: 'info' },
+      { type: 'delay', ms: 800 },
+      { type: 'raw', text: 'Booting Arch Linux in 1 seconds...', style: 'info' },
+      { type: 'delay', ms: 800 },
+      { type: 'raw', text: '' },
+      { type: 'boot', msg: 'Linux version 6.12.7-arch1-1 (root@archlinux) #1 SMP PREEMPT_DYNAMIC', ok: true, delay: 200 },
+      { type: 'boot', msg: 'x86/fpu: Supporting XSAVE feature', ok: true, delay: 100 },
+      { type: 'boot', msg: 'SMP: Allowing 8 CPUs, 8 hotplug CPUs', ok: true, delay: 200 },
+      { type: 'boot', msg: 'ACPI: Core revision 20240322', ok: true, delay: 120 },
+      { type: 'boot', msg: 'Calibrating delay loop... 7782.40 BogoMIPS', ok: true, delay: 300 },
+      { type: 'boot', msg: 'Mount-cache hash table entries: 65536', ok: true, delay: 100 },
+      { type: 'boot', msg: 'AVX2 version of gcm_enc/dec engaged', ok: true, delay: 120 },
+      { type: 'raw', text: '' },
+      { type: 'raw', text: ' :: Running early hook [udev]', style: 'info' },
+      { type: 'delay', ms: 400 },
+      { type: 'raw', text: ' :: Running hook [udev]', style: 'info' },
+      { type: 'delay', ms: 300 },
+      { type: 'raw', text: ' :: Running hook [filesystems]', style: 'info' },
+      { type: 'delay', ms: 500 },
+      { type: 'raw', text: ' :: Running hook [fsck]', style: 'info' },
+      { type: 'delay', ms: 600 },
+      { type: 'raw', text: '' },
+      { type: 'systemd', msg: 'Reached target User and Group Name Lookups', ok: true },
+      { type: 'systemd', msg: 'Reached target Remote File Systems', ok: true },
+      { type: 'systemd', msg: 'Reached target Swaps', ok: true },
+      { type: 'systemd', msg: 'Starting Accounts Service...', ok: true },
+      { type: 'systemd', msg: 'Starting Avahi mDNS/DNS-SD Stack...', ok: true },
+      { type: 'systemd', msg: 'Starting Bluetooth Service...', ok: true },
+      { type: 'systemd', msg: 'Starting D-Bus System Message Bus...', ok: true },
+      { type: 'systemd', msg: 'Starting Network Manager...', ok: true },
+      { type: 'systemd', msg: 'Starting GDM Display Manager...', ok: true },
+      { type: 'systemd', msg: 'Starting udev Coldplug all Devices...', ok: true },
+      { type: 'systemd', msg: 'Starting udev Kernel Device Manager...', ok: true },
+      { type: 'systemd', msg: 'Starting Modem Manager...', ok: true },
+      { type: 'systemd', msg: 'Starting Firewall Service...', ok: true },
+      { type: 'systemd', msg: 'Started Accounts Service', ok: true },
+      { type: 'systemd', msg: 'Started Avahi mDNS/DNS-SD Stack', ok: true },
+      { type: 'systemd', msg: 'Started Bluetooth Service', ok: true },
+      { type: 'systemd', msg: 'Started D-Bus System Message Bus', ok: true },
+      { type: 'systemd', msg: 'Started Network Manager', ok: true },
+      { type: 'systemd', msg: 'Started GDM Display Manager', ok: true },
+      { type: 'systemd', msg: 'Started udev Kernel Device Manager', ok: true },
+      { type: 'systemd', msg: 'Starting Network Manager Wait Online...', ok: true, extraDelay: 600 },
+      { type: 'systemd', msg: 'Starting Hostname Service...', ok: true, extraDelay: 400 },
+      { type: 'systemd', msg: 'Started Network Manager Wait Online', ok: true },
+      { type: 'systemd', msg: 'Started Hostname Service', ok: true },
+      { type: 'raw', text: '' },
+      { type: 'raw', text: ' :: networking   [OK]   IPv4: 192.168.1.42', style: 'ok' },
+      { type: 'raw', text: ' :: networking   [OK]   IPv6: 2601::a1b2:3c4d', style: 'ok' },
+      { type: 'raw', text: '' },
+      { type: 'systemd', msg: 'Reached target Network is Online', ok: true },
+      { type: 'systemd', msg: 'Reached target Graphical Interface', ok: true },
+      { type: 'raw', text: '' },
+      { type: 'raw', text: 'Arch Linux 6.12.7-arch1-1 (tty1)', style: 'info' },
+      { type: 'raw', text: '' },
+      { type: 'raw', text: 'archlinux login: ', blink: true },
+    ];
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function timestamp() {
+      const d = new Date();
+      return `[${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}]`;
+    }
+    function createLine(text, className) {
+      const div = document.createElement('div');
+      div.className = 'line';
+      if (className) {
+        const span = document.createElement('span');
+        span.className = className;
+        span.textContent = text;
+        div.appendChild(span);
+      } else {
+        div.textContent = text;
+      }
+      return div;
+    }
+    function createSystemdLine(text, isOk) {
+      const div = document.createElement('div');
+      div.className = 'line';
+      const ts = document.createElement('span');
+      ts.className = 'timestamp';
+      ts.textContent = timestamp() + ' ';
+      div.appendChild(ts);
+      const status = document.createElement('span');
+      status.className = isOk ? 'ok' : 'fail';
+      status.textContent = isOk ? '[  OK  ]' : '[FAILED]';
+      div.appendChild(status);
+      const msg = document.createTextNode(' ' + text);
+      div.appendChild(msg);
+      return div;
+    }
+    function createBootLine(text, isOk) {
+      const div = document.createElement('div');
+      div.className = 'line';
+      const status = document.createElement('span');
+      status.className = isOk ? 'ok' : 'fail';
+      status.textContent = isOk ? '[  OK  ]' : '[FAILED]';
+      div.appendChild(status);
+      const msg = document.createTextNode(' ' + text);
+      div.appendChild(msg);
+      return div;
+    }
+
+    let svcCounter = 0;
+    let bootDone = false;
+
+    function appendLine(type, data) {
+      let el;
+      if (type === 'systemd') {
+        el = createSystemdLine(data.msg, data.ok);
+        svcCounter++;
+        svcCount.textContent = svcCounter;
+      } else if (type === 'boot') {
+        el = createBootLine(data.msg, data.ok);
+      } else if (type === 'raw') {
+        el = createLine(data.text, data.style);
+      }
+      if (el) log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function flash() {
+      const el = document.getElementById('flash-overlay');
+      el.classList.add('active');
+      setTimeout(() => el.classList.remove('active'), 80);
+    }
+
+    function bootComplete() {
+      if (bootDone) return;
+      bootDone = true;
+      bootState.textContent = 'ready';
+
+      setTimeout(() => {
+        flash();
+
+        bootScreen.classList.add('shutdown');
+
+        setTimeout(() => {
+          bootScreen.style.display = 'none';
+          bootScreen.classList.remove('shutdown');
+
+          mainContent.style.display = 'block';
+          mainContent.style.opacity = '0';
+
+          setTimeout(() => flash(), 40);
+
+          setTimeout(() => {
+            initSections();
+            mainContent.classList.add('power-on');
+            setTimeout(() => {
+              mainContent.classList.remove('power-on');
+            }, 650);
+          }, 100);
+        }, 700);
+      }, 1200);
+    }
+
+    function processNext() {
+      if (lineIndex >= lines.length) { bootComplete(); return; }
+      const data = lines[lineIndex];
+      lineIndex++;
+      if (data.type === 'delay') { setTimeout(processNext, data.ms); return; }
+      const delay = data.extraDelay || (data.type === 'systemd' ? 60 + Math.random() * 80 : 40 + Math.random() * 60);
+      if (data.blink) {
+        const div = document.createElement('div');
+        div.className = 'line';
+        div.textContent = data.text;
+        const cursor = document.createElement('span');
+        cursor.className = 'cursor';
+        div.appendChild(cursor);
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+      } else {
+        appendLine(data.type, data);
+      }
+      setTimeout(processNext, delay);
+    }
+
+    // ── Sections System ──
+    const sections = [
+      {
+        id: 'welcome',
+        html: `
+          <div class="terminal">
+<span class="comment">#</span>
+<span class="comment"># Arch Linux 6.12.7-arch1-1</span>
+<span class="comment"># Kernel live: 0h 2m 34s</span>
+<span class="comment">#</span>
+
+<span class="prompt">archlinux login:</span> root
+<span class="prompt">Password:</span> ************
+
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">neofetch</span>
+                    .-.
+                  .-::::-.
+                .:::::::::-.          <span class="value">root@archlinux</span>
+              .:-----------+:.        <span class="dim">OS:</span><span class="value"> Arch Linux x86_64</span>
+             .-----------+++-.        <span class="dim">Kernel:</span><span class="value"> 6.12.7-arch1-1</span>
+            .-----------+++++-.       <span class="dim">Uptime:</span><span class="value"> 2 minutes</span>
+           .:---------.://+++-.       <span class="dim">Packages:</span><span class="value"> 847 (pacman)</span>
+          .:-----------.://+++-.      <span class="dim">Shell:</span><span class="value"> bash 5.2.37</span>
+         :-------------:://++++.      <span class="dim">Resolution:</span><span class="value"> 1920x1080</span>
+        :--------------::://+++-.     
+       :---------------::://++++-.    <span class="comment"># use arrows or 1-6</span>
+      :-----------------::://++++:-.  <span class="comment"># to navigate sections</span>
+     :------------------::://+++++--. 
+   .:-------------------::://++++++--:
+  .:--------------------::://+++++++--:
+ :----------------------::://++++++++--:
+  </div>
+        `
+      },
+      {
+        id: 'system',
+        html: `
+          <div class="terminal">
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">cat /proc/cpuinfo | grep -E "model name|cpu cores"</span>
+<span class="prompt">model name</span>  : AMD Ryzen 7 7800X3D (8) @ 3.8GHz
+<span class="prompt">cpu cores</span>   : 8
+
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">free -h</span>
+               <span class="dim">total</span>        <span class="dim">used</span>        <span class="dim">free</span>      <span class="dim">shared</span>     <span class="dim">buff/cache</span>
+<span class="prompt">Mem:</span>          15.6Gi       2.3Gi       8.1Gi       0.1Gi       5.2Gi
+<span class="prompt">Swap:</span>          8.0Gi          0       8.0Gi
+
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">df -h /</span>
+<span class="dim">Filesystem</span>      <span class="dim">Size</span>  <span class="dim">Used</span> <span class="dim">Avail</span>  <span class="dim">Use%</span>
+/dev/nvme0n1p2   916G  124G   746G   14%
+
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">lspci | grep -E "VGA|3D"</span>
+<span class="prompt">2d:00.0</span> VGA compatible controller: NVIDIA GA104 [GeForce RTX 3070]
+  </div>
+        `
+      },
+      {
+        id: 'services',
+        html: `
+          <div class="terminal">
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">systemctl list-units --type=service --state=running</span>
+  UNIT                     LOAD   ACTIVE SUB     DESCRIPTION
+<span class="prompt">  NetworkManager.service</span>  loaded active running Network Manager
+<span class="prompt">  bluetooth.service</span>       loaded active running Bluetooth Service
+<span class="prompt">  cups.service</span>            loaded active running CUPS Scheduler
+<span class="prompt">  firewalld.service</span>       loaded active running Firewall Service
+<span class="prompt">  gdm.service</span>             loaded active running GDM Display Manager
+<span class="prompt">  sshd.service</span>            loaded active running OpenSSH Daemon
+
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">systemctl is-active docker</span>
+<span class="comment">inactive</span>
+
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">uptime -s</span>
+<span class="value">2026-07-12 14:23:07</span>
+  </div>
+        `
+      },
+      {
+        id: 'network',
+        html: `
+          <div class="terminal">
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">ip addr show eth0</span>
+<span class="prompt">2: eth0</span> <span class="dim">state UP</span>
+    inet <span class="value">192.168.1.42/24</span> brd 192.168.1.255
+    inet6 <span class="value">2601::a1b2:3c4d</span>/64 scope global
+
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">ping -c 2 1.1.1.1</span>
+PING 1.1.1.1 (1.1.1.1) 56(84) bytes of data.
+64 bytes from 1.1.1.1: icmp_seq=1 ttl=53 <span class="prompt">time=1.2 ms</span>
+64 bytes from 1.1.1.1: icmp_seq=2 ttl=53 <span class="prompt">time=0.9 ms</span>
+
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">speedtest-cli --simple</span>
+Ping: <span class="value">1.2 ms</span>
+Download: <span class="value">847.42 Mbit/s</span>
+Upload: <span class="value">418.73 Mbit/s</span>
+  </div>
+        `
+      },
+      {
+        id: 'quote',
+        html: `
+          <div class="terminal">
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">fortune</span>
+<span class="comment">#</span>
+<span class="comment">#  "Simplicity is the</span>
+<span class="comment">#   ultimate sophistication."</span>
+<span class="comment">#</span>
+<span class="comment">#          — Leonardo da Vinci</span>
+<span class="comment">#</span>
+
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">_</span>
+  </div>
+        `
+      },
+      {
+        id: 'end',
+        html: `
+          <div class="terminal">
+<span class="cmd">[root@archlinux ~]$</span> <span class="value">exit</span>
+logout
+
+<span class="comment"># Connection to archlinux closed.</span>
+<span class="comment">#</span>
+<span class="comment">#  END OF TRANSMISSION</span>
+<span class="comment">#</span>
+<span class="comment">#  [R] — back to start</span>
+<span class="comment">#  [M] — toggle theme</span>
+<span class="comment">#</span>
+  </div>
+        `
+      }
+    ];
+
+    let currentSection = 0;
+    let isTransitioning = false;
+
+    function initSections() {
+      sections.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'section';
+        div.id = 'section-' + s.id;
+        div.innerHTML = s.html;
+        mainContent.appendChild(div);
+      });
+
+      // Build dots
+      const dotsContainer = document.getElementById('nav-dots');
+      sections.forEach((_, i) => {
+        const dot = document.createElement('span');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dotsContainer.appendChild(dot);
+      });
+
+      goToSection(0, false);
+      updateCounter();
+
+      setTimeout(() => {
+        navFooter.style.display = 'flex';
+      }, 400);
+
+      document.addEventListener('keydown', handleKey);
+    }
+
+    function handleKey(e) {
+      const key = e.key;
+
+      // Only handle keyboard if not in boot
+      if (bootScreen.style.display !== 'none') return;
+
+      switch (key) {
+        case 'ArrowDown':
+        case 'ArrowRight':
+          e.preventDefault();
+          if (isTransitioning) return;
+          if (currentSection < sections.length - 1) {
+            goToSection(currentSection + 1, 'right');
+          }
+          break;
+        case 'ArrowUp':
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (isTransitioning) return;
+          if (currentSection > 0) {
+            goToSection(currentSection - 1, 'left');
+          }
+          break;
+        case '1': case '2': case '3': case '4': case '5': case '6':
+          e.preventDefault();
+          if (isTransitioning) return;
+          const idx = parseInt(key) - 1;
+          if (idx < sections.length) {
+            goToSection(idx, idx > currentSection ? 'right' : 'left');
+          }
+          break;
+        case 'r':
+        case 'R':
+          e.preventDefault();
+          if (isTransitioning) return;
+          goToSection(0, 'left');
+          break;
+        case 'm':
+        case 'M':
+          e.preventDefault();
+          document.body.classList.toggle('light');
+          break;
+        case 'Escape':
+          e.preventDefault();
+          if (document.body.classList.contains('light')) {
+            document.body.classList.remove('light');
+          }
+          break;
+      }
+    }
+
+    function goToSection(index, direction) {
+      isTransitioning = true;
+      const prev = currentSection;
+      currentSection = index;
+
+      const prevEl = document.querySelector('.section.active');
+      const nextEl = document.getElementById('section-' + sections[index].id);
+
+      if (prevEl) {
+        if (direction === 'left') {
+          prevEl.classList.add('exit-right');
+        } else if (direction === 'right') {
+          prevEl.classList.add('exit-left');
+        } else {
+          prevEl.classList.remove('active');
+        }
+      }
+
+      // If there's a previous element, wait for its transition
+      if (prevEl && direction) {
+        setTimeout(() => {
+          prevEl.classList.remove('active', 'exit-left', 'exit-right');
+        }, 500);
+      }
+
+      nextEl.classList.add('active');
+
+      updateCounter();
+      updateDots();
+
+      setTimeout(() => {
+        isTransitioning = false;
+      }, 550);
+    }
+
+    function updateCounter() {
+      document.getElementById('nav-counter').textContent =
+        (currentSection + 1) + ' / ' + sections.length;
+    }
+
+    function updateDots() {
+      document.querySelectorAll('.dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentSection);
+      });
+    }
+
+    processNext();
+  </script>
+</body>
+</html>
